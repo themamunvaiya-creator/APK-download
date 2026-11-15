@@ -111,6 +111,13 @@ fun AppNavigation(
     auth: FirebaseAuth = Firebase.auth,
     initialCallId: String? = null
 ) {
+    val context = LocalContext.current
+    val sharedPrefs = remember(context) {
+        context.getSharedPreferences("callguard_auth_prefs", Context.MODE_PRIVATE)
+    }
+    var isGuestMode by remember {
+        mutableStateOf(sharedPrefs.getBoolean("is_guest_mode", false))
+    }
     var currentUser by remember { mutableStateOf(auth.currentUser) }
 
     DisposableEffect(auth) {
@@ -122,15 +129,30 @@ fun AppNavigation(
     }
 
     val user = currentUser
-    if (user == null) {
-        AuthScreen(onAuthSuccess = { currentUser = auth.currentUser })
+    if (user == null && !isGuestMode) {
+        AuthScreen(
+            onAuthSuccess = {
+                sharedPrefs.edit().putBoolean("is_guest_mode", false).apply()
+                isGuestMode = false
+                currentUser = auth.currentUser
+            },
+            onGuestSignIn = {
+                sharedPrefs.edit().putBoolean("is_guest_mode", true).apply()
+                isGuestMode = true
+            }
+        )
     } else {
-        val uid = user.uid
+        val uid = user?.uid ?: "guest_user"
+        val email = user?.email ?: "Guest User"
         key(uid) {
             MainAuthenticatedScaffold(
                 currentUserId = uid,
-                userEmail = user.email,
-                initialCallId = initialCallId
+                userEmail = email,
+                initialCallId = initialCallId,
+                onSignOutCallback = {
+                    sharedPrefs.edit().putBoolean("is_guest_mode", false).apply()
+                    isGuestMode = false
+                }
             )
         }
     }
@@ -141,7 +163,8 @@ fun AppNavigation(
 private fun MainAuthenticatedScaffold(
     currentUserId: String,
     userEmail: String?,
-    initialCallId: String?
+    initialCallId: String?,
+    onSignOutCallback: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -410,6 +433,7 @@ private fun MainAuthenticatedScaffold(
                             onDeleteVip = assistantViewModel::deleteVipContact,
                             onRequestPermissions = requestAllPermissionsAndRole,
                             onSignOut = {
+                                onSignOutCallback()
                                 signOut(
                                     credentialManager = credentialManager,
                                     scope = scope

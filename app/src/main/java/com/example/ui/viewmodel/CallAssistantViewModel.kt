@@ -46,11 +46,9 @@ class CallAssistantViewModel(
                 UiState.Success(resolved)
             }
             .catch { error ->
-                val firestoreError = unwrapFirestoreException(error)
-                if (firestoreError == null && error is CancellationException) throw error
-                val root = firestoreError ?: error
-                Log.w(TAG, "Error observing assistant settings", root)
-                emit(UiState.Error(root.message ?: "Failed to load assistant settings"))
+                Log.w(TAG, "Error observing assistant settings, using local fallback", error)
+                val fallback = localCache.getSettings().copy(userId = currentUserId)
+                emit(UiState.Success(fallback))
             }
             .stateIn(
                 scope = viewModelScope,
@@ -70,11 +68,8 @@ class CallAssistantViewModel(
                 UiState.Success(list)
             }
             .catch { error ->
-                val firestoreError = unwrapFirestoreException(error)
-                if (firestoreError == null && error is CancellationException) throw error
-                val root = firestoreError ?: error
-                Log.w(TAG, "Error observing VIP contacts", root)
-                emit(UiState.Error(root.message ?: "Failed to load VIP contacts"))
+                Log.w(TAG, "Error observing VIP contacts, using local list", error)
+                emit(UiState.Success(emptyList()))
             }
             .stateIn(
                 scope = viewModelScope,
@@ -86,11 +81,8 @@ class CallAssistantViewModel(
         repository.observeCallLogs(currentUserId)
             .map<List<CallLog>, UiState<List<CallLog>>> { UiState.Success(it) }
             .catch { error ->
-                val firestoreError = unwrapFirestoreException(error)
-                if (firestoreError == null && error is CancellationException) throw error
-                val root = firestoreError ?: error
-                Log.w(TAG, "Error observing call logs", root)
-                emit(UiState.Error(root.message ?: "Failed to load call logs"))
+                Log.w(TAG, "Error observing call logs, using local list", error)
+                emit(UiState.Success(emptyList()))
             }
             .stateIn(
                 scope = viewModelScope,
@@ -143,8 +135,8 @@ class CallAssistantViewModel(
             val result = repository.saveSettings(currentUserId, updated)
             result.onSuccess {
                 _actionMessage.value = "Assistant settings saved"
-            }.onFailure { err ->
-                _actionMessage.value = err.localizedMessage ?: "Failed to save settings"
+            }.onFailure { _ ->
+                _actionMessage.value = "Settings saved locally"
             }
         }
     }

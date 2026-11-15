@@ -27,10 +27,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.NotificationsActive
+import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.PhoneInTalk
 import androidx.compose.material.icons.rounded.Shield
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -195,7 +197,8 @@ fun signOut(
 
 @Composable
 fun AuthScreen(
-    onAuthSuccess: () -> Unit
+    onAuthSuccess: () -> Unit,
+    onGuestSignIn: () -> Unit = onAuthSuccess
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -377,6 +380,48 @@ fun AuthScreen(
                             fontWeight = FontWeight.Bold
                         )
                     }
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // Guest Login Button
+                OutlinedButton(
+                    onClick = {
+                        errorMessage = null
+                        isLoading = true
+                        scope.launch {
+                            try {
+                                Firebase.auth.signInAnonymously().await()
+                                isLoading = false
+                                onAuthSuccess()
+                            } catch (e: Exception) {
+                                Log.w(TAG, "Anonymous auth failed (${e.message}), using local guest mode")
+                                isLoading = false
+                                onGuestSignIn()
+                            }
+                        }
+                    },
+                    enabled = !isLoading,
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.primary
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                        .testTag("guest_sign_in_button")
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Person,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text(
+                        text = "Continue as Guest (গেস্ট একাউন্ট)",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(14.dp))
