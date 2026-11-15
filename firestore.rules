@@ -1,0 +1,164 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidAssistantSettings(data, userId) {
+      return data.userId is string && data.userId == userId && data.userId.size() <= 128 &&
+             data.assistantEnabled is bool &&
+             data.autoAnswerMode in ['all', 'unknown_only', 'screening_only'] &&
+             data.assistantLanguage in ['bilingual', 'bn-BD', 'en-US'] &&
+             data.assistantName is string && data.assistantName.size() >= 1 && data.assistantName.size() <= 40 &&
+             data.greetingPrompt is string && data.greetingPrompt.size() >= 1 && data.greetingPrompt.size() <= 500 &&
+             data.importanceRules is string && data.importanceRules.size() >= 1 && data.importanceRules.size() <= 1000 &&
+             data.notifyUrgentOnly is bool &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidVipContact(data, userId) {
+      return data.userId is string && data.userId == userId && data.userId.size() <= 128 &&
+             data.name is string && data.name.size() >= 1 && data.name.size() <= 60 &&
+             data.phoneNumber is string && data.phoneNumber.size() >= 1 && data.phoneNumber.size() <= 30 &&
+             data.priorityLevel in ['critical', 'high', 'block'] &&
+             data.note is string && data.note.size() <= 200 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidCallLog(data, userId) {
+      return data.userId is string && data.userId == userId && data.userId.size() <= 128 &&
+             data.callerName is string && data.callerName.size() >= 1 && data.callerName.size() <= 80 &&
+             data.callerNumber is string && data.callerNumber.size() >= 1 && data.callerNumber.size() <= 30 &&
+             data.status in ['important', 'routine', 'spam', 'missed'] &&
+             data.importanceScore is int && data.importanceScore >= 0 && data.importanceScore <= 100 &&
+             data.aiSummary is string && data.aiSummary.size() >= 1 && data.aiSummary.size() <= 500 &&
+             data.transcript is string && data.transcript.size() <= 4000 &&
+             data.actionTaken is string && data.actionTaken.size() >= 1 && data.actionTaken.size() <= 120 &&
+             data.durationSeconds is int && data.durationSeconds >= 0 && data.durationSeconds <= 36000 &&
+             data.notifiedUser is bool &&
+             data.acknowledged is bool &&
+             data.isSimulated is bool &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    match /users/{userId}/settings/{settingId} {
+      allow list: if isSignedIn() && request.auth.uid == userId;
+      allow get: if isSignedIn() && isValidId(settingId) && request.auth.uid == userId;
+
+      allow create: if isSignedIn() &&
+                       isValidId(settingId) &&
+                       settingId == 'assistant' &&
+                       request.auth.uid == userId &&
+                       incoming().keys().hasAll([
+                         'userId', 'assistantEnabled', 'autoAnswerMode', 'assistantLanguage',
+                         'assistantName', 'greetingPrompt', 'importanceRules', 'notifyUrgentOnly',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'assistantEnabled', 'autoAnswerMode', 'assistantLanguage',
+                         'assistantName', 'greetingPrompt', 'importanceRules', 'notifyUrgentOnly',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidAssistantSettings(incoming(), userId);
+
+      allow update: if isSignedIn() &&
+                       isValidId(settingId) &&
+                       settingId == 'assistant' &&
+                       request.auth.uid == userId &&
+                       isValidAssistantSettings(incoming(), userId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'assistantEnabled', 'autoAnswerMode', 'assistantLanguage',
+                         'assistantName', 'greetingPrompt', 'importanceRules',
+                         'notifyUrgentOnly', 'updatedAt'
+                       ]);
+
+      allow delete: if isSignedIn() && isValidId(settingId) && request.auth.uid == userId;
+    }
+
+    match /users/{userId}/vip_contacts/{contactId} {
+      allow list: if isSignedIn() && request.auth.uid == userId;
+      allow get: if isSignedIn() && isValidId(contactId) && request.auth.uid == userId;
+
+      allow create: if isSignedIn() &&
+                       isValidId(contactId) &&
+                       request.auth.uid == userId &&
+                       incoming().keys().hasAll([
+                         'userId', 'name', 'phoneNumber', 'priorityLevel', 'note',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'name', 'phoneNumber', 'priorityLevel', 'note',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidVipContact(incoming(), userId);
+
+      allow update: if isSignedIn() &&
+                       isValidId(contactId) &&
+                       request.auth.uid == userId &&
+                       isValidVipContact(incoming(), userId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'name', 'phoneNumber', 'priorityLevel', 'note', 'updatedAt'
+                       ]);
+
+      allow delete: if isSignedIn() && isValidId(contactId) && request.auth.uid == userId;
+    }
+
+    match /users/{userId}/call_logs/{callId} {
+      allow list: if isSignedIn() && request.auth.uid == userId;
+      allow get: if isSignedIn() && isValidId(callId) && request.auth.uid == userId;
+
+      allow create: if isSignedIn() &&
+                       isValidId(callId) &&
+                       request.auth.uid == userId &&
+                       incoming().keys().hasAll([
+                         'userId', 'callerName', 'callerNumber', 'status', 'importanceScore',
+                         'aiSummary', 'transcript', 'actionTaken', 'durationSeconds',
+                         'notifiedUser', 'acknowledged', 'isSimulated', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'callerName', 'callerNumber', 'status', 'importanceScore',
+                         'aiSummary', 'transcript', 'actionTaken', 'durationSeconds',
+                         'notifiedUser', 'acknowledged', 'isSimulated', 'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidCallLog(incoming(), userId);
+
+      allow update: if isSignedIn() &&
+                       isValidId(callId) &&
+                       request.auth.uid == userId &&
+                       isValidCallLog(incoming(), userId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'acknowledged', 'updatedAt'
+                       ]);
+
+      allow delete: if isSignedIn() && isValidId(callId) && request.auth.uid == userId;
+    }
+  }
+}

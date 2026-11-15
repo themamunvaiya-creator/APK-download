@@ -1,0 +1,6 @@
+{
+  "name": "CallGuard AI",
+  "description": "AI Call Assistant that screens and answers incoming calls, converses naturally with callers, and triggers urgent notifications for important calls.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

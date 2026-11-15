@@ -1,0 +1,25 @@
+<resources>
+    <string name="app_name">CallGuard AI</string>
+    <string name="sign_in_with_google">Sign in with Google</string>
+    <string name="auth_subtitle">আপনার এআই কল অ্যাসিস্ট্যান্ট — সকল কল রিসিভ করে কথা বলবে এবং জরুরি কল হলে সাথে সাথে নোটিফিকেশন দিবে।</string>
+    <string name="auth_feature_1_title">Auto-Answer &amp; AI Voice Talk</string>
+    <string name="auth_feature_1_desc">কল রিসিভ করে কলারের সাথে বাংলা বা ইংরেজিতে কথা বলে উদ্দেশ্য জেনে নেয়।</string>
+    <string name="auth_feature_2_title">Important Call Alerts</string>
+    <string name="auth_feature_2_desc">গুরুত্বপূর্ণ বা জরুরি কল শনাক্ত করলেই হাই-প্রায়োরিটি নোটিফিকেশন পাঠায়।</string>
+    <string name="auth_feature_3_title">VIP Rules &amp; Cloud Sync</string>
+    <string name="auth_feature_3_desc">VIP কলার তালিকা, কাস্টম স্ক্রিপ্ট ও সম্পূর্ণ কল ট্রান্সক্রিপ্ট সুরক্ষিত থাকে।</string>
+    <string name="auth_privacy_note">Secured with Google Sign-In &amp; Cloud Firestore</string>
+
+    <string name="nav_calls">Calls</string>
+    <string name="nav_live_ai">AI Call</string>
+    <string name="nav_rules">Rules</string>
+
+    <string name="cd_hero_banner">Atmospheric call protection banner</string>
+    <string name="cd_assistant_avatar">CallGuard AI assistant orb avatar</string>
+    <string name="cd_back">Navigate back</string>
+    <string name="cd_call_back">Call back this number</string>
+    <string name="cd_delete_log">Delete call log</string>
+    <string name="cd_mic_speak">Speak as caller using microphone</string>
+    <string name="cd_send_reply">Send caller message</string>
+    <string name="cd_add_vip">Add VIP or blocked contact</string>
+</resources>

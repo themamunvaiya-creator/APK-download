@@ -1,0 +1,216 @@
+{
+  "entities": {
+    "AssistantSettings": {
+      "title": "AssistantSettings",
+      "description": "Configuration for the user's AI Call Assistant behavior, greeting, language, and importance criteria.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Owner Firebase Auth UID."
+        },
+        "assistantEnabled": {
+          "type": "boolean",
+          "description": "Whether the AI Call Assistant is active."
+        },
+        "autoAnswerMode": {
+          "type": "string",
+          "enum": ["all", "unknown_only", "screening_only"],
+          "description": "Call handling mode."
+        },
+        "assistantLanguage": {
+          "type": "string",
+          "enum": ["bilingual", "bn-BD", "en-US"],
+          "description": "Language used by AI voice assistant."
+        },
+        "assistantName": {
+          "type": "string",
+          "description": "Display name of the AI assistant."
+        },
+        "greetingPrompt": {
+          "type": "string",
+          "description": "Opening greeting spoken to callers."
+        },
+        "importanceRules": {
+          "type": "string",
+          "description": "Custom rules describing what makes a call urgent or important."
+        },
+        "notifyUrgentOnly": {
+          "type": "boolean",
+          "description": "If true, send high-priority notifications only for urgent calls."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when settings were created."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when settings were last updated."
+        }
+      },
+      "required": [
+        "userId",
+        "assistantEnabled",
+        "autoAnswerMode",
+        "assistantLanguage",
+        "assistantName",
+        "greetingPrompt",
+        "importanceRules",
+        "notifyUrgentOnly",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "VipContact": {
+      "title": "VipContact",
+      "description": "A VIP or blocked contact rule configured by the user.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Owner Firebase Auth UID."
+        },
+        "name": {
+          "type": "string",
+          "description": "Contact display name."
+        },
+        "phoneNumber": {
+          "type": "string",
+          "description": "Phone number or caller ID pattern."
+        },
+        "priorityLevel": {
+          "type": "string",
+          "enum": ["critical", "high", "block"],
+          "description": "Priority or block level for this caller."
+        },
+        "note": {
+          "type": "string",
+          "description": "Optional context or handling instruction."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when contact rule was created."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when contact rule was updated."
+        }
+      },
+      "required": [
+        "userId",
+        "name",
+        "phoneNumber",
+        "priorityLevel",
+        "note",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "CallLog": {
+      "title": "CallLog",
+      "description": "Screened or AI-answered call transcript, summary, and importance assessment.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Owner Firebase Auth UID."
+        },
+        "callerName": {
+          "type": "string",
+          "description": "Caller name or Unknown."
+        },
+        "callerNumber": {
+          "type": "string",
+          "description": "Caller phone number."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["important", "routine", "spam", "missed"],
+          "description": "AI classification of the call."
+        },
+        "importanceScore": {
+          "type": "integer",
+          "description": "Urgency score from 0 to 100."
+        },
+        "aiSummary": {
+          "type": "string",
+          "description": "Concise AI summary of the call."
+        },
+        "transcript": {
+          "type": "string",
+          "description": "Full conversation transcript between AI and caller."
+        },
+        "actionTaken": {
+          "type": "string",
+          "description": "Action taken by the AI assistant."
+        },
+        "durationSeconds": {
+          "type": "integer",
+          "description": "Duration of the call conversation in seconds."
+        },
+        "notifiedUser": {
+          "type": "boolean",
+          "description": "Whether a priority notification was dispatched."
+        },
+        "acknowledged": {
+          "type": "boolean",
+          "description": "Whether the user has reviewed/acknowledged this call."
+        },
+        "isSimulated": {
+          "type": "boolean",
+          "description": "Whether this call log came from an in-app AI voice test."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when call log was created."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when call log was updated."
+        }
+      },
+      "required": [
+        "userId",
+        "callerName",
+        "callerNumber",
+        "status",
+        "importanceScore",
+        "aiSummary",
+        "transcript",
+        "actionTaken",
+        "durationSeconds",
+        "notifiedUser",
+        "acknowledged",
+        "isSimulated",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/settings/{settingId}": {
+      "schema": {
+        "$ref": "#/entities/AssistantSettings"
+      },
+      "description": "User-scoped AI Call Assistant configuration."
+    },
+    "/users/{userId}/vip_contacts/{contactId}": {
+      "schema": {
+        "$ref": "#/entities/VipContact"
+      },
+      "description": "User-scoped VIP and blocked caller rules."
+    },
+    "/users/{userId}/call_logs/{callId}": {
+      "schema": {
+        "$ref": "#/entities/CallLog"
+      },
+      "description": "User-scoped AI call transcripts and importance logs."
+    }
+  }
+}
